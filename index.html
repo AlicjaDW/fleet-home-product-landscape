@@ -1,0 +1,733 @@
+<!-- SAMPLE fictional dashboard. Not a live extract. -->
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Sample fleet & home-product landscape</title>
+<style>
+  :root {
+    --bg:#f4f5f7; --card:#fff; --ink:#171a20; --muted:#5c5e62; --line:#d0d1d2;
+    --brand:#3e6ae1; --green:#1a7f37;
+    --caronly:#c5c7cb; --charger:#8e6bbf; --battery:#e67e22; --full:#2ecc71;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: Arial, Helvetica, sans-serif; background:var(--bg); color:var(--ink); }
+  .wrap { max-width:1280px; margin:0 auto; padding:18px 20px 48px; }
+  h1 { font-size:22px; margin:0 0 4px; font-weight:700; letter-spacing:-0.02em; }
+  .frame {
+    color:var(--muted); font-size:12px; line-height:1.45; margin:0 0 14px;
+    padding-bottom:12px; border-bottom:1px solid var(--line);
+  }
+  .frame b { color:var(--ink); font-weight:700; }
+  a { color:var(--brand); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+
+  .kpirow { display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; margin:0 0 14px; }
+  .kpi {
+    background:var(--card); border:1px solid var(--line); border-radius:8px;
+    padding:12px 12px 10px;
+  }
+  .kpi.opp { border-color:#b8c7f5; background:#f7f9ff; }
+  .kpi .v { font-size:22px; font-weight:700; line-height:1.1; }
+  .kpi .l { font-size:11px; color:var(--muted); margin-top:5px; line-height:1.3; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+  .kpi .s { font-size:11px; color:var(--muted); margin-top:3px; }
+
+  .card {
+    background:var(--card); border:1px solid var(--line); border-radius:8px;
+    padding:14px 16px; margin-bottom:12px;
+  }
+  .card h2 { margin:0 0 4px; font-size:15px; font-weight:700; }
+  .card .hint { font-size:12px; color:var(--muted); margin:0 0 12px; line-height:1.4; }
+
+  .seg {
+    display:inline-flex; flex-wrap:wrap; gap:4px; margin:0 0 12px;
+    background:#f0f1f3; padding:3px; border-radius:8px;
+  }
+  .seg label {
+    margin:0; padding:6px 12px; border-radius:6px; font-size:12px;
+    cursor:pointer; user-select:none; color:var(--muted); font-weight:600;
+  }
+  .seg input { display:none; }
+  .seg label:has(input:checked) {
+    background:#fff; color:var(--brand); box-shadow:0 1px 3px rgba(0,0,0,.08);
+  }
+
+  table.mix { width:100%; border-collapse:collapse; font-size:13px; }
+  table.mix th, table.mix td { border-bottom:1px solid var(--line); padding:9px 10px; text-align:right; vertical-align:middle; }
+  table.mix th { background:#f7f8fa; font-weight:700; color:#333; font-size:11px; text-transform:uppercase; letter-spacing:.03em; }
+  table.mix th:first-child, table.mix td:first-child { text-align:left; }
+  table.mix tr.total td { font-weight:700; background:#fafbfc; border-bottom:none; }
+  table.mix .barwrap { height:8px; background:#eee; border-radius:4px; overflow:hidden; min-width:80px; }
+  table.mix .bar { height:100%; border-radius:4px; }
+  .swatch { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; vertical-align:middle; }
+  .mean { font-size:12px; color:var(--muted); max-width:280px; text-align:left !important; }
+
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px; }
+  .grid3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:12px; }
+  .lens-card h3 { margin:0 0 8px; font-size:13px; font-weight:700; }
+  .lens-card .big { font-size:20px; font-weight:700; }
+  .lens-card .meta { font-size:12px; color:var(--muted); margin:2px 0 10px; line-height:1.35; }
+  .mini-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .mini-table td { padding:4px 0; border-bottom:1px solid #eee; }
+  .mini-table td:last-child { text-align:right; font-weight:700; }
+  .mini-table tr:last-child td { border-bottom:none; }
+  .delta-up { color:var(--green); }
+  .delta-down { color:#b42318; }
+
+  .opp-card {
+    background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px;
+    border-top:3px solid var(--brand);
+  }
+  .opp-card.step { border-top-color:var(--battery); }
+  .opp-card.vip { border-top-color:var(--full); }
+  .opp-card .n { font-size:26px; font-weight:700; line-height:1.1; }
+  .opp-card .t { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin-bottom:6px; }
+  .opp-card .a { font-size:13px; margin-top:10px; line-height:1.4; color:var(--ink); }
+  .opp-card .a b { color:var(--brand); }
+
+  .legend { display:flex; flex-wrap:wrap; gap:8px 14px; font-size:12px; margin:0 0 8px; color:var(--muted); }
+  .legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+  canvas { width:100%; height:280px; display:block; }
+  .empty { color:var(--muted); font-size:13px; padding:20px 8px; }
+
+  .insights { display:grid; gap:8px; }
+  .ins {
+    display:grid; grid-template-columns: 140px 1fr 1fr; gap:10px; align-items:start;
+    padding:10px 12px; background:#fafbfc; border:1px solid var(--line); border-radius:6px; font-size:12px; line-height:1.4;
+  }
+  .ins .theme { font-weight:700; color:var(--brand); font-size:12px; }
+  .ins .lab { font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:700; margin-bottom:2px; }
+
+  details.advanced {
+    background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin-bottom:12px;
+  }
+  details.advanced summary {
+    cursor:pointer; font-size:13px; font-weight:700; color:var(--muted); list-style:none;
+  }
+  details.advanced summary::-webkit-details-marker { display:none; }
+  details.advanced summary::before { content:"▸ "; }
+  details.advanced[open] summary::before { content:"▾ "; }
+  details.advanced summary:hover { color:var(--brand); }
+  .filters { display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-top:12px; }
+  .fcard { background:#fafbfc; border:1px solid var(--line); border-radius:6px; padding:8px 10px; }
+  .fcard h3 { margin:0 0 6px; font-size:10px; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); font-weight:700; }
+  .fcard select { width:100%; padding:5px 6px; border:1px solid var(--line); border-radius:5px; font-size:12px; background:#fff; }
+  .seg-sm { display:flex; gap:4px; flex-wrap:wrap; }
+  .seg-sm label {
+    margin:0; padding:4px 8px; border:1px solid var(--line); border-radius:999px;
+    font-size:11px; background:#fff; user-select:none; cursor:pointer; white-space:nowrap;
+  }
+  .seg-sm input { display:none; }
+  .seg-sm label:has(input:checked) { background:#eef2fc; border-color:#b8c7f5; color:var(--brand); font-weight:700; }
+  .dd { position:relative; min-width:120px; }
+  .dd-btn {
+    width:100%; text-align:left; padding:6px 8px; border:1px solid var(--line); border-radius:5px;
+    background:#fff; font-size:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+  }
+  .dd-panel {
+    display:none; position:absolute; z-index:20; top:calc(100% + 4px); left:0; right:0;
+    background:#fff; border:1px solid var(--line); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.08);
+    max-height:220px; overflow:auto; padding:6px;
+  }
+  .dd.open .dd-panel { display:block; }
+  .dd-panel label { display:flex; align-items:center; gap:8px; padding:5px 6px; font-size:12px; margin:0; cursor:pointer; border-radius:4px; }
+  .dd-panel label:hover { background:#f5f7fb; }
+  .dd-actions { display:flex; gap:6px; padding:6px 4px 2px; border-top:1px solid var(--line); margin-top:4px; }
+  .dd-actions button, .reset-btn {
+    font-size:11px; padding:4px 8px; border:1px solid var(--line); background:#fff; border-radius:5px; cursor:pointer;
+  }
+  .reset-btn { margin-top:8px; }
+
+  .defs { font-size:12px; color:var(--muted); line-height:1.55; }
+  .defs dt { font-weight:700; color:#333; margin-top:6px; }
+  .defs dd { margin:2px 0 0 0; }
+
+  .compare-wrap { overflow-x:auto; }
+  table.compare { width:100%; border-collapse:collapse; font-size:12px; min-width:520px; }
+  table.compare th, table.compare td { border-bottom:1px solid var(--line); padding:7px 8px; text-align:right; }
+  table.compare th { background:#f7f8fa; font-size:11px; text-transform:uppercase; letter-spacing:.02em; }
+  table.compare th:first-child, table.compare td:first-child { text-align:left; }
+
+  @media (max-width:1000px) {
+    .kpirow, .grid2, .grid3, .filters { grid-template-columns: 1fr 1fr; }
+    .ins { grid-template-columns: 1fr; }
+  }
+  @media (max-width:600px) {
+    .kpirow, .grid2, .grid3, .filters { grid-template-columns: 1fr; }
+  }
+
+  .sample-banner {
+    background:#8B0000; color:#fff; text-align:center; font-size:13px; font-weight:700;
+    padding:8px 16px; letter-spacing:.2px;
+  }
+</style>
+<script src="landscape_data_SAMPLE.js"></script>
+</head>
+<body>
+<div class="sample-banner">SAMPLE / FICTIONAL DATA — not real customers, products, volumes or a live market. Layout example only. Do not treat any figure as live performance.</div>
+<div class="wrap">
+  <h1>Sample fleet & home-product landscape</h1>
+  <div class="frame" id="frameLine"></div>
+
+  <details class="advanced" id="advBox">
+    <summary>Refine base (advanced filters)</summary>
+    <div class="filters">
+      <div class="fcard">
+        <h3>First purchase product</h3>
+        <select id="fp">
+          <option value="all">All products</option>
+          <option value="Vehicle">Vehicle first</option>
+          <option value="Home Charger">Home Charger first</option>
+          <option value="Home Battery">Home Battery first</option>
+        </select>
+      </div>
+      <div class="fcard">
+        <h3>Date field</h3>
+        <div class="seg-sm">
+          <label><input type="radio" name="dtype" value="first" checked><span>First product</span></label>
+          <label><input type="radio" name="dtype" value="last"><span>Last product</span></label>
+          <label><input type="radio" name="dtype" value="delivery"><span>Vehicle delivery</span></label>
+        </div>
+        <div class="seg-sm" style="margin-top:6px">
+          <label><input type="radio" name="unit" value="year" checked><span>Year</span></label>
+          <label><input type="radio" name="unit" value="quarter"><span>Quarter</span></label>
+          <label><input type="radio" name="unit" value="month"><span>Month</span></label>
+        </div>
+      </div>
+      <div class="fcard">
+        <h3>Year(s)</h3>
+        <div class="dd" id="yearDd">
+          <button type="button" class="dd-btn" id="yearBtn"><span id="yearLabel">All years</span><span>▾</span></button>
+          <div class="dd-panel" id="yearPanel"></div>
+        </div>
+      </div>
+      <div class="fcard">
+        <h3>Vehicles on person</h3>
+        <div class="seg-sm">
+          <label><input type="radio" name="cars" value="all" checked><span>All</span></label>
+          <label><input type="radio" name="cars" value="1"><span>1 vehicle</span></label>
+          <label><input type="radio" name="cars" value="2"><span>2+ vehicles</span></label>
+        </div>
+        <button type="button" class="reset-btn" id="resetBtn">Reset filters</button>
+      </div>
+    </div>
+  </details>
+
+  <div class="kpirow" id="kpis"></div>
+
+  <div class="card">
+    <h2>Owners by product mix</h2>
+    <p class="hint">Four exclusive buckets on the sample vehicle base.</p>
+    <div id="mixTableWrap"></div>
+  </div>
+
+  <div class="card lens-card">
+    <h2>Household size</h2>
+    <p class="hint">1 vehicle vs 2+ vehicles on the same person. Second-vehicle homes are warmer to home kit.</p>
+    <div id="householdCards"></div>
+  </div>
+
+  <div class="card">
+    <h2>New customers &amp; repeated buyers</h2>
+    <p class="hint">Live sample stock · true individual on the vehicle (not the lease company).</p>
+    <div id="repeatStock"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="trendTitle">Today’s attach by year of first product</h2>
+    <p class="hint">Share who <b>currently</b> have Home Charger / Home Battery / full stack, grouped by year of their earliest vehicle / charger / energy date.</p>
+    <div class="legend">
+      <span><i style="background:#8e6bbf"></i>Home Charger</span>
+      <span><i style="background:#e67e22"></i>Home Battery</span>
+      <span><i style="background:#2ecc71"></i>Full stack</span>
+    </div>
+    <canvas id="trend" width="860" height="280"></canvas>
+    <div id="trendEmpty" class="empty" style="display:none">No data for the selected years / filters.</div>
+    <div id="cohortTable" style="margin-top:12px"></div>
+  </div>
+
+
+  <div class="card" id="partnerHighlights">
+    <h2>Partner highlights</h2>
+
+    <div class="grid2" style="margin:0">
+      <div>
+        <h3 style="margin:0 0 6px;font-size:13px;font-weight:700">Partner orders YTD</h3>
+        <div id="partnerYtdKpi" style="font-size:28px;font-weight:700;line-height:1.1;margin-bottom:4px"></div>
+        <div id="partnerYtdSub" class="hint" style="margin:0 0 10px"></div>
+        <canvas id="partnerPie" width="360" height="220" style="width:100%;max-width:360px;height:220px;display:block;margin:0 auto"></canvas>
+        <div id="partnerPieLegend" class="foot" style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5"></div>
+      </div>
+      <div>
+        <h3 style="margin:0 0 6px;font-size:13px;font-weight:700">Product mix — existing customers</h3>
+        <p class="hint" style="margin:0 0 8px">Partner customers already on the vehicle / energy base (excludes new-to-brand).</p>
+        <div id="partnerMixTable"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="card">
+    <h2>Definitions</h2>
+    <dl class="defs" id="defs"></dl>
+    <p class="defs" style="margin-top:10px" id="biNote"></p>
+  </div>
+</div>
+
+<script>
+if (!window.LANDSCAPE_DATA) {
+  document.body.innerHTML = '<p style="font-family:Arial,sans-serif;padding:24px"><b>Sample data not loaded.</b> Keep <code>landscape_data_SAMPLE.js</code> next to this HTML.</p>';
+  throw new Error('landscape_data_SAMPLE.js missing');
+}
+const DATA = window.LANDSCAPE_DATA;
+
+/* Sample partner snapshot */
+const PARTNER = {
+  orders_ytd: 260,
+  existing: 148,
+  new: 112,
+  pct_existing: 56.9,
+  pct_new: 43.1,
+  date_min: "2026-02-01",
+  date_max: "2026-09-20",
+  as_of: "2026-10-01",
+  mix_existing: [
+    { label: "Vehicle", n: 70, col: "#c5c7cb" },
+    { label: "Multi-vehicle", n: 28, col: "#8a8d93" },
+    { label: "Vehicle + Home Battery", n: 16, col: "#e67e22" },
+    { label: "Vehicle + Home Charger", n: 14, col: "#8e6bbf" },
+    { label: "Home Battery only", n: 8, col: "#d35400" },
+    { label: "Multi-vehicle + Home Charger", n: 6, col: "#6b4ea3" },
+    { label: "Multi-vehicle + Home Battery", n: 4, col: "#ca6f1e" },
+    { label: "Full stack (vehicle + charger + battery)", n: 1, col: "#2ecc71" },
+    { label: "Home Charger only", n: 1, col: "#9b59b6" }
+  ]
+};
+
+/* Sample stock — people view only.
+   One person per vehicle, not the leasing firm. 1 vehicle = first-time; 2+ = repeated buyer. */
+const REPEAT = {
+  as_of: "2026-10-01",
+  source: "sample extract",
+  people: 4180,
+  first_time: 3001,
+  pct_first_time: 71.79,
+  repeated: 1179,
+  pct_repeated: 28.21,
+  multi: 1179,
+  pct_multi: 28.21
+};
+
+const MIX_ORDER = [
+  { key:'Vehicle only', label:'Vehicle only', col:'#c5c7cb', mean:'Vehicle on record — no Home Charger, no Home Battery. Main opportunity pool.' },
+  { key:'Vehicle + Charger only', label:'Vehicle + Home Charger only', col:'#8e6bbf', mean:'Home charging done. Natural Home Battery step-up pool.' },
+  { key:'Vehicle + Home Battery only', label:'Vehicle + Home Battery only', col:'#e67e22', mean:'Energy on record without a Home Charger.' },
+  { key:'Vehicle + Charger + Battery', label:'Full stack (vehicle + charger + battery)', col:'#2ecc71', mean:'Rare, high-value. VIP aftercare — not the mass target.' }
+];
+
+function fmt(n){ return (n||0).toLocaleString('en-GB'); }
+function pct(n,d){ return d ? (100*n/d) : 0; }
+function pct1(n,d){ return pct(n,d).toFixed(1); }
+function radio(name){
+  const el = document.querySelector('input[name="'+name+'"]:checked');
+  return el ? el.value : 'all';
+}
+function flags(r){ return { hv:!!r.hv, ht:!!r.ht, hp:!!r.hp, he:!!r.he, own:r.own||'Vehicle only' }; }
+function dateOf(r){
+  const d=radio('dtype');
+  if(d==='last') return r.ld||'';
+  if(d==='delivery') return r.vd||'';  /* earliest vehicle delivery on the person */
+  return r.fd||'';
+}
+function yearOf(r){
+  const d = dateOf(r);
+  return d && d.length>=4 ? d.slice(0,4) : '';
+}
+function bucketOf(r){
+  const d = dateOf(r);
+  if(!d || d.length<7) return '';
+  const y=d.slice(0,4), m=parseInt(d.slice(5,7),10);
+  const unit=radio('unit');
+  if(unit==='year') return y;
+  if(unit==='quarter') return y+' Q'+(Math.floor((m-1)/3)+1);
+  const mon=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+  return mon+' '+y;
+}
+function bucketSortKey(b){
+  if(/^\d{4}$/.test(b)) return b+'-00';
+  const qm=b.match(/^(\d{4}) Q(\d)$/);
+  if(qm) return qm[1]+'-Q'+qm[2];
+  const mm=b.match(/^([A-Za-z]{3}) (\d{4})$/);
+  if(mm){
+    const mi=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(mm[1]);
+    return mm[2]+'-'+String(mi+1).padStart(2,'0');
+  }
+  return b;
+}
+
+const yearPanel=document.getElementById('yearPanel');
+const yearBtn=document.getElementById('yearBtn');
+const yearDd=document.getElementById('yearDd');
+const yearLabel=document.getElementById('yearLabel');
+const allYears=(DATA.meta.years||[]).map(String);
+
+function buildYearPanel(){
+  yearPanel.innerHTML = allYears.map(y=>
+    '<label><input type="checkbox" class="yr" value="'+y+'" checked> '+y+'</label>'
+  ).join('') +
+  '<div class="dd-actions">'+
+    '<button type="button" id="yrAll">Select all</button>'+
+    '<button type="button" id="yrNone">Clear</button>'+
+  '</div>';
+  yearPanel.querySelectorAll('.yr').forEach(el=>el.addEventListener('change',()=>{ updateYearLabel(); render(); }));
+  document.getElementById('yrAll').addEventListener('click',e=>{
+    e.stopPropagation();
+    yearPanel.querySelectorAll('.yr').forEach(c=>c.checked=true);
+    updateYearLabel(); render();
+  });
+  document.getElementById('yrNone').addEventListener('click',e=>{
+    e.stopPropagation();
+    yearPanel.querySelectorAll('.yr').forEach(c=>c.checked=false);
+    updateYearLabel(); render();
+  });
+}
+function selectedYears(){ return [...yearPanel.querySelectorAll('.yr:checked')].map(c=>c.value); }
+function updateYearLabel(){
+  const ys=selectedYears();
+  if(!ys.length) yearLabel.textContent='No years';
+  else if(ys.length===allYears.length) yearLabel.textContent='All years';
+  else if(ys.length<=3) yearLabel.textContent=ys.join(', ');
+  else yearLabel.textContent=ys.length+' years selected';
+}
+yearBtn.addEventListener('click',e=>{ e.stopPropagation(); yearDd.classList.toggle('open'); });
+document.addEventListener('click',e=>{ if(!yearDd.contains(e.target)) yearDd.classList.remove('open'); });
+buildYearPanel(); updateYearLabel();
+
+function baseFiltered(){
+  const fp=document.getElementById('fp').value;
+  const years=selectedYears();
+  const yearSet=new Set(years);
+  const allSelected=years.length===allYears.length;
+  const cars=radio('cars');
+  return DATA.rows.filter(r=>{
+    if(fp!=='all' && r.fp!==fp) return false;
+    if(years.length===0) return false;
+    if(!allSelected){
+      const y=yearOf(r);
+      if(!y || !yearSet.has(y)) return false;
+    }
+    const vq=r.vq||0;
+    if(cars==='1' && vq!==1) return false;
+    if(cars==='2' && vq<2) return false;
+    return true;
+  });
+}
+
+function mixStats(rows){
+  const n=rows.length||0;
+  let ht=0, hp=0, he=0, cars=0;
+  const own={};
+  MIX_ORDER.forEach(m=>own[m.key]=0);
+  rows.forEach(r=>{
+    const f=flags(r);
+    if(f.ht) ht++;
+    if(f.hp) hp++;
+    if(f.he) he++;
+    cars += (r.vq||0);
+    const k=f.own;
+    own[k]=(own[k]||0)+1;
+  });
+  return { n, cars, ht, hp, he, own, pctT:pct(ht,n), pctP:pct(hp,n), pctE:pct(he,n) };
+}
+
+function renderMixTable(rows, channelLabel){
+  const s=mixStats(rows);
+  let html='<table class="mix"><thead><tr>'+
+    '<th>Owner segment</th><th>People</th><th>% of people</th><th>Share</th><th>What it means</th>'+
+    '</tr></thead><tbody>';
+  MIX_ORDER.forEach(m=>{
+    const v=s.own[m.key]||0;
+    const p=pct(v,s.n);
+    html+='<tr>'+
+      '<td><span class="swatch" style="background:'+m.col+'"></span><b>'+m.label+'</b></td>'+
+      '<td>'+fmt(v)+'</td>'+
+      '<td>'+p.toFixed(1)+'%</td>'+
+      '<td><div class="barwrap"><div class="bar" style="width:'+p+'%;background:'+m.col+'"></div></div></td>'+
+      '<td class="mean">'+m.mean+'</td>'+
+      '</tr>';
+  });
+  html+='<tr class="total"><td>Total'+(channelLabel? ' · '+channelLabel:'')+'</td><td>'+fmt(s.n)+'</td><td>100%</td><td></td><td class="mean">Charger attach '+s.pctT.toFixed(1)+'% · Battery attach '+s.pctP.toFixed(1)+'% · Full stack '+s.pctE.toFixed(1)+'%</td></tr>';
+  html+='</tbody></table>';
+  return html;
+}
+
+function miniMix(s){
+  return MIX_ORDER.map(m=>{
+    const v=s.own[m.key]||0;
+    return '<tr><td><span class="swatch" style="background:'+m.col+'"></span>'+m.label+'</td><td>'+fmt(v)+' <span style="color:#888;font-weight:600">('+pct1(v,s.n)+'%)</span></td></tr>';
+  }).join('');
+}
+
+function renderLenses(scope){
+  const one=scope.filter(r=>(r.vq||0)===1);
+  const multi=scope.filter(r=>(r.vq||0)>=2);
+  const s1=mixStats(one), s2=mixStats(multi);
+  document.getElementById('householdCards').innerHTML =
+    '<div class="grid2" style="margin:0">'+
+      '<div>'+
+        '<div class="big">'+fmt(s1.n)+'</div>'+
+        '<div class="meta">1 vehicle · '+pct1(s1.n,scope.length)+'% of people<br>Charger '+s1.pctT.toFixed(1)+'% · Battery '+s1.pctP.toFixed(1)+'%</div>'+
+        '<table class="mini-table">'+miniMix(s1)+'</table>'+
+      '</div>'+
+      '<div>'+
+        '<div class="big">'+fmt(s2.n)+'</div>'+
+        '<div class="meta">2+ vehicles · '+pct1(s2.n,scope.length)+'% of people<br>Charger '+s2.pctT.toFixed(1)+'% · Battery '+s2.pctP.toFixed(1)+'%</div>'+
+        '<table class="mini-table">'+miniMix(s2)+'</table>'+
+      '</div>'+
+    '</div>';
+}
+
+function renderRepeatCustomers(){
+  const r = REPEAT;
+  const html =
+    '<div class="grid2" style="margin:0">'+
+      '<div class="opp-card step">'+
+        '<div class="t">First-time</div>'+
+        '<div class="n">'+r.pct_first_time.toFixed(0)+'%</div>'+
+        '<div class="a">of sample-market owners are <b>first-time buyers</b> &middot; '+fmt(r.first_time)+' customers.</div>'+
+      '</div>'+
+      '<div class="opp-card">'+
+        '<div class="t">Repeated buyers</div>'+
+        '<div class="n">'+r.pct_repeated.toFixed(0)+'%</div>'+
+        '<div class="a">of sample-market owners are <b>repeated buyers</b> &middot; '+fmt(r.repeated)+' customers.</div>'+
+      '</div>'+
+    '</div>';
+  document.getElementById('repeatStock').innerHTML = html;
+}
+
+
+
+function drawTrend(tstats){
+  const c=document.getElementById('trend');
+  const empty=document.getElementById('trendEmpty');
+  const ctx=c.getContext('2d');
+  const W=c.width, H=c.height;
+  ctx.clearRect(0,0,W,H);
+  if(!tstats.length){
+    c.style.display='none'; empty.style.display='block'; return;
+  }
+  c.style.display='block'; empty.style.display='none';
+  const pad={ l:48, r:16, t:16, b:52 };
+  const pw=W-pad.l-pad.r, ph=H-pad.t-pad.b;
+  ctx.strokeStyle='#eee'; ctx.fillStyle='#888'; ctx.font='11px Arial'; ctx.textAlign='right';
+  for(let y=0;y<=100;y+=20){
+    const yy=pad.t+ph-(y/100)*ph;
+    ctx.beginPath(); ctx.moveTo(pad.l,yy); ctx.lineTo(pad.l+pw,yy); ctx.stroke();
+    ctx.fillText(y+'%', pad.l-8, yy+4);
+  }
+  ctx.strokeStyle='#ccc';
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+ph); ctx.lineTo(pad.l+pw,pad.t+ph); ctx.stroke();
+  const series=[{key:'t',color:'#8e6bbf'},{key:'p',color:'#e67e22'},{key:'e',color:'#2ecc71'}];
+  const n=tstats.length;
+  series.forEach(function(s){
+    ctx.strokeStyle=s.color; ctx.lineWidth=2.5; ctx.beginPath();
+    tstats.forEach(function(pt,i){
+      const x=pad.l+(n===1?pw/2:(i/(n-1))*pw);
+      const y=pad.t+ph-(pt[s.key]/100)*ph;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    ctx.fillStyle=s.color;
+    tstats.forEach(function(pt,i){
+      const x=pad.l+(n===1?pw/2:(i/(n-1))*pw);
+      const y=pad.t+ph-(pt[s.key]/100)*ph;
+      ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill();
+    });
+  });
+  ctx.fillStyle='#555'; ctx.font='10px Arial'; ctx.textAlign='center';
+  const step=Math.max(1, Math.ceil(n/12));
+  tstats.forEach(function(pt,i){
+    if(i%step!==0 && i!==n-1) return;
+    const x=pad.l+(n===1?pw/2:(i/(n-1))*pw);
+    ctx.save(); ctx.translate(x, pad.t+ph+10); ctx.rotate(-Math.PI/4); ctx.textAlign='right';
+    ctx.fillText(pt.b,0,0); ctx.restore();
+  });
+}
+
+function renderCohort(scope){
+  const deliveryMode = radio('dtype')==='delivery';
+  const by={};
+  scope.forEach(r=>{
+    const d = deliveryMode ? (r.vd||'') : (r.fd||'');
+    const y=d.length>=4?d.slice(0,4):'';
+    if(!y || y<'2015') return;
+    if(!by[y]) by[y]=[];
+    by[y].push(r);
+  });
+  const years=Object.keys(by).sort();
+  const yHead = deliveryMode ? 'Vehicle delivery year' : 'First product year';
+  let html='<table class="compare"><thead><tr><th>'+yHead+'</th><th>People</th><th>Vehicles on those people</th><th>% Home Charger</th><th>% Home Battery</th><th>% Full stack</th><th>% multi-vehicle</th></tr></thead><tbody>';
+  years.forEach(y=>{
+    const rows=by[y];
+    const s=mixStats(rows);
+    const multi=rows.filter(r=>(r.vq||0)>=2).length;
+    html+='<tr><td>'+y+'</td><td>'+fmt(s.n)+'</td><td>'+fmt(s.cars)+'</td><td>'+s.pctT.toFixed(1)+'%</td><td>'+s.pctP.toFixed(1)+'%</td><td>'+s.pctE.toFixed(1)+'%</td><td>'+pct1(multi,s.n)+'%</td></tr>';
+  });
+  html+='</tbody></table>';
+  if(deliveryMode){
+    html+='<p class="hint" style="margin:8px 0 0">Cohort = earliest <b>vehicle delivered date</b> on that person (still in the sample base). Vehicles column = vehicles on those people today. Rates = whether they have home products <b>today</b>. This is the closer read next to delivery flow dashboards (e.g. a delivery-flow report).</p>';
+  } else {
+    html+='<p class="hint" style="margin:8px 0 0">Cohort = earliest dated product among vehicle / charger / energy on that person. Rates = whether they have the product <b>today</b>.</p>';
+  }
+  document.getElementById('cohortTable').innerHTML=html;
+}
+
+function render(){
+  const scope=baseFiltered();
+  const s=mixStats(scope);
+  const asOf=DATA.meta.as_of||'';
+  const asOfNice=asOf? asOf.split('-').reverse().join('/'): '';
+
+  document.getElementById('frameLine').innerHTML =
+    '<b>Sample market</b> · live vehicle owners (in-service base) · <b>individual customer count</b> · '+
+    'home products linked on the same customer record · as at <b>'+asOfNice+'</b>'+
+    (scope.length!==DATA.rows.length? ' · <b>filtered view: '+fmt(scope.length)+' customers</b>':'');
+
+  const carOnly=s.own['Vehicle only']||0;
+  document.getElementById('kpis').innerHTML =
+    '<div class="kpi"><div class="v">'+fmt(s.n)+'</div><div class="l">People with a vehicle in this sample</div><div class="s">'+fmt(s.cars)+' vehicles on those people</div></div>'+
+    '<div class="kpi opp"><div class="v">'+fmt(carOnly)+'</div><div class="l">Vehicle only</div><div class="s">'+pct1(carOnly,s.n)+'% — main opportunity pool</div></div>'+
+    '<div class="kpi"><div class="v">'+s.pctT.toFixed(1)+'%</div><div class="l">Share with Home Charger</div><div class="s">'+fmt(s.ht)+' people</div></div>'+
+    '<div class="kpi"><div class="v">'+s.pctP.toFixed(1)+'%</div><div class="l">Share with Home Battery</div><div class="s">'+fmt(s.hp)+' people</div></div>'+
+    '<div class="kpi"><div class="v">'+s.pctE.toFixed(1)+'%</div><div class="l">Full home stack</div><div class="s">'+fmt(s.he)+' · vehicle + charger + battery</div></div>';
+
+  document.getElementById('mixTableWrap').innerHTML=renderMixTable(scope, 'All people');
+
+  renderLenses(scope);
+
+  const byB={};
+  scope.forEach(r=>{
+    const b=bucketOf(r);
+    if(!b) return;
+    if(!byB[b]) byB[b]=[];
+    byB[b].push(r);
+  });
+  const labels=Object.keys(byB).sort((a,c)=>bucketSortKey(a)<bucketSortKey(c)?-1:1);
+  const tstats=labels.map(b=>{
+    const rr=byB[b]; const st=mixStats(rr);
+    return { b, n:st.n, t:st.pctT, p:st.pctP, e:st.pctE };
+  }).filter(x=>x.n>=15);
+
+  const unit=radio('unit');
+  const unitLabel=unit==='year'?'year':(unit==='quarter'?'quarter':'month');
+  const dlab = radio('dtype')==='delivery' ? 'vehicle delivery' : (radio('dtype')==='last' ? 'latest product' : 'first product');
+  document.getElementById('trendTitle').textContent =
+    'Today’s attach by '+ dlab +' '+unitLabel;
+  const thint = document.querySelector('#trendTitle') && document.getElementById('trendTitle').parentElement
+    ? document.getElementById('trendTitle').parentElement.querySelector('.hint') : null;
+  if(thint){
+    if(radio('dtype')==='delivery'){
+      thint.innerHTML = 'Share who <b>currently</b> have Home Charger / Home Battery / full stack, grouped by year of their <b>earliest vehicle delivery</b> (vehicle delivered date on the person).';
+    } else {
+      thint.innerHTML = 'Share who <b>currently</b> have Home Charger / Home Battery / full stack, grouped by year of their earliest vehicle / charger / energy date.';
+    }
+  }
+
+  drawTrend(tstats);
+  renderCohort(scope);
+}
+
+function renderDefs(){
+  document.getElementById('defs').innerHTML =
+    '<dt>Who is in the base</dt><dd>Sample-market live vehicle owners: people with a delivered vehicle still in open ownership. Rolled up to <b>people</b>, using the driver rather than the leasing firm, so a large lessor does not collapse into one customer.</dd>'+
+    '<dt>Product mix (exclusive)</dt><dd>Vehicle only · Vehicle + Home Charger only · Vehicle + Home Battery only · Full stack (vehicle + charger + battery). Every person sits in exactly one bucket.</dd>'+
+    '<dt>How home products are linked</dt><dd>Home Charger and Home Battery only count when the same customer record ties the vehicle person to a charger or a battery order or install. A shared email on its own is not enough.</dd>'+
+    '<dt>Dates used for counting</dt><dd><b>Who is in the hub:</b> live ownership as at the as-of date. <b>First / last product</b> = earliest and latest among vehicle, charger and battery dates. <b>Vehicle delivery</b> = earliest delivered date on that person. Year filters, the trend and the cohort follow the date field selected above. Attach % is whether they have the product <b>today</b>.</dd>'+
+    '<dt>Multi-vehicle</dt><dd>Two or more vehicles currently attributed to the same person.</dd>'+
+    '<dt>New customers &amp; repeated buyers</dt><dd>Live sample stock, <b>people only</b>. <b>1 vehicle</b> = first-time buyer; <b>2+ vehicles</b> = repeated buyer. Shares are % of owners in this sample. Not a weekly sales report.</dd>'+
+    '<dt>What this is not</dt><dd>Not a live market extract, not last-week sales, and not a partner-order impact report. Figures in this file are fictional.</dd>';
+  document.getElementById('biNote').innerHTML =
+    'An account-level report can collapse leasing firms into one row. This view counts people so leasing does not hide owners. Almost everyone here has a vehicle because the starting base is live vehicle owners. This copy uses dummy data only.';
+}
+
+function resetFilters(){
+  document.querySelectorAll('#advBox input[type=radio]').forEach(el=>{
+    if(el.name==='dtype' && el.value==='first') el.checked=true;
+    else if(el.name==='unit' && el.value==='year') el.checked=true;
+    else if(el.name==='cars' && el.value==='all') el.checked=true;
+    else if(el.name==='dtype'||el.name==='unit'||el.name==='cars') el.checked=false;
+  });
+  document.getElementById('fp').value='all';
+  yearPanel.querySelectorAll('.yr').forEach(c=>c.checked=true);
+  updateYearLabel();
+  render();
+}
+
+document.getElementById('resetBtn').addEventListener('click', resetFilters);
+document.getElementById('fp').addEventListener('change', render);
+document.querySelectorAll('input[type=radio]').forEach(el=>el.addEventListener('change', render));
+function renderPartnerHighlights(){
+  const b = PARTNER;
+  const totalMix = b.mix_existing.reduce((s,x)=>s+x.n, 0) || 1;
+  document.getElementById('partnerYtdKpi').textContent = fmt(b.orders_ytd);
+  document.getElementById('partnerYtdSub').textContent =
+    'Orders YTD · '+b.date_min.split('-').reverse().join('/')+' – '+b.date_max.split('-').reverse().join('/')+
+    ' · as at '+(b.as_of||'').split('-').reverse().join('/');
+
+  /* pie: existing vs new */
+  const c = document.getElementById('partnerPie');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  ctx.clearRect(0,0,W,H);
+  const cx = W*0.42, cy = H*0.50, R = Math.min(W,H)*0.36, r = R*0.55;
+  const slices = [
+    { n: b.existing, col: '#3e6ae1', lab: 'Already a customer' },
+    { n: b.new, col: '#c5c7cb', lab: 'New to the brand' }
+  ];
+  let a0 = -Math.PI/2;
+  const sum = slices.reduce((s,x)=>s+x.n,0) || 1;
+  slices.forEach(s=>{
+    const a1 = a0 + (s.n/sum)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.fillStyle=s.col;
+    ctx.arc(cx,cy,R,a0,a1); ctx.closePath(); ctx.fill();
+    a0 = a1;
+  });
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#171a20'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center';
+  ctx.fillText(fmt(b.orders_ytd), cx, cy-2);
+  ctx.font = '11px Arial'; ctx.fillStyle = '#666';
+  ctx.fillText('orders', cx, cy+14);
+
+  document.getElementById('partnerPieLegend').innerHTML =
+    '<span style="display:inline-block;width:10px;height:10px;background:#3e6ae1;border-radius:2px;margin-right:6px"></span>'+
+    '<b>Already a customer</b> '+fmt(b.existing)+' ('+b.pct_existing.toFixed(0)+'%)'+
+    '&nbsp;&nbsp;&nbsp;'+
+    '<span style="display:inline-block;width:10px;height:10px;background:#c5c7cb;border-radius:2px;margin-right:6px"></span>'+
+    '<b>New to the brand</b> '+fmt(b.new)+' ('+b.pct_new.toFixed(0)+'%)';
+
+  /* mix table existing only */
+  let html = '<table class="mix"><thead><tr><th>Owner segment</th><th>Customers</th><th>% of existing</th><th>Share</th></tr></thead><tbody>';
+  b.mix_existing.forEach(m=>{
+    const p = 100*m.n/totalMix;
+    html += '<tr>'+
+      '<td><span class="swatch" style="background:'+m.col+'"></span>'+m.label+'</td>'+
+      '<td>'+fmt(m.n)+'</td>'+
+      '<td>'+p.toFixed(1)+'%</td>'+
+      '<td><div class="barwrap"><div class="bar" style="width:'+p+'%;background:'+m.col+'"></div></div></td>'+
+      '</tr>';
+  });
+  html += '<tr class="total"><td>Total existing owners</td><td>'+fmt(totalMix)+'</td><td>100%</td><td></td></tr>';
+  html += '</tbody></table>';
+  document.getElementById('partnerMixTable').innerHTML = html;
+}
+
+renderDefs();
+renderPartnerHighlights();
+renderRepeatCustomers();
+render();
+</script>
+</body>
+</html>
